@@ -26,30 +26,43 @@ Deno.serve(async (req) => {
     const model = genAI.getGenerativeModel({ model: 'gemini-pro' })
 
     // Create a structured prompt for historical analysis
-    const prompt = `Analyze this historical text and extract the following information in JSON format:
-    - key events (with dates if available)
-    - important characters/people
-    - significant locations
-    - key terms or concepts
-    - relationships between entities
+    const prompt = `Analyze this historical text and extract the following information. Return ONLY the JSON object without any markdown formatting or explanation:
+    {
+      "events": [{"date": "YYYY", "description": "event description"}],
+      "people": ["person name"],
+      "locations": ["location name"],
+      "terms": ["key term"],
+      "relationships": [{"from": "entity1", "to": "entity2", "type": "relationship type"}]
+    }
     
-    Text to analyze: ${text}
-    
-    Please format the response as a JSON object with these keys: events, people, locations, terms, relationships`
+    Text to analyze: ${text}`
 
     const result = await model.generateContent(prompt)
     const response = await result.response
     const analysisText = response.text()
     
-    console.log('Analysis completed successfully')
-
-    return new Response(
-      JSON.stringify({ analysis: analysisText }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200 
-      }
-    )
+    // Extract JSON from the response
+    let cleanJson = analysisText
+    // Remove any markdown code block formatting if present
+    cleanJson = cleanJson.replace(/```json\n?/g, '').replace(/```\n?/g, '')
+    
+    // Try to parse the cleaned JSON
+    try {
+      const parsedAnalysis = JSON.parse(cleanJson)
+      console.log('Successfully parsed analysis:', parsedAnalysis)
+      
+      return new Response(
+        JSON.stringify({ analysis: JSON.stringify(parsedAnalysis) }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200 
+        }
+      )
+    } catch (parseError) {
+      console.error('Error parsing analysis JSON:', parseError)
+      console.log('Raw analysis text:', analysisText)
+      throw new Error('Failed to parse analysis results')
+    }
   } catch (error) {
     console.error('Error:', error.message)
     return new Response(
