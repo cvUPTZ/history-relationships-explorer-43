@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Search } from "@/components/Search";
 import { Timeline } from "@/components/Timeline";
 import { EntityCard } from "@/components/EntityCard";
+import { HistoryAnalyzer } from "@/components/HistoryAnalyzer";
 
 const sampleEvents = [
   {
@@ -75,11 +76,21 @@ const Index = () => {
           <Search onSearch={handleSearch} />
         </motion.div>
 
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6 }}
+          className="mb-8"
+        >
+          <h2 className="sf-pro-display mb-4 text-2xl font-semibold">Analyze Historical Text</h2>
+          <HistoryAnalyzer />
+        </motion.div>
+
         <div className="grid gap-8 md:grid-cols-2">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.6 }}
+            transition={{ delay: 0.8 }}
           >
             <h2 className="sf-pro-display mb-4 text-2xl font-semibold">Timeline</h2>
             <Timeline events={sampleEvents} />
@@ -88,7 +99,7 @@ const Index = () => {
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.8 }}
+            transition={{ delay: 1.0 }}
           >
             <h2 className="sf-pro-display mb-4 text-2xl font-semibold">Featured</h2>
             <EntityCard {...sampleEntity} />
