@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
+import { RelationshipGraph } from "./RelationshipGraph";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface AnalysisResult {
   events: Array<{ date?: string; description: string }>;
@@ -74,58 +76,74 @@ export const HistoryAnalyzer = () => {
       </Button>
 
       {analysis && (
-        <div className="space-y-6 mt-8">
-          <div>
-            <h3 className="text-lg font-semibold mb-2">Events</h3>
-            <ul className="space-y-2">
-              {analysis.events.map((event, index) => (
-                <li key={index} className="p-2 bg-muted rounded-md">
-                  {event.date ? `${event.date}: ` : ''}{event.description}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Tabs defaultValue="list" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="list">List View</TabsTrigger>
+            <TabsTrigger value="graph">Graph View</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="list" className="space-y-6">
             <div>
-              <h3 className="text-lg font-semibold mb-2">People</h3>
-              <ul className="space-y-1">
-                {analysis.people.map((person, index) => (
-                  <li key={index} className="p-2 bg-muted rounded-md">{person}</li>
+              <h3 className="text-lg font-semibold mb-2">Events</h3>
+              <ul className="space-y-2">
+                {analysis.events.map((event, index) => (
+                  <li key={index} className="p-2 bg-muted rounded-md">
+                    {event.date ? `${event.date}: ` : ''}{event.description}
+                  </li>
                 ))}
               </ul>
             </div>
 
-            <div>
-              <h3 className="text-lg font-semibold mb-2">Locations</h3>
-              <ul className="space-y-1">
-                {analysis.locations.map((location, index) => (
-                  <li key={index} className="p-2 bg-muted rounded-md">{location}</li>
-                ))}
-              </ul>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <h3 className="text-lg font-semibold mb-2">People</h3>
+                <ul className="space-y-1">
+                  {analysis.people.map((person, index) => (
+                    <li key={index} className="p-2 bg-muted rounded-md">{person}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Locations</h3>
+                <ul className="space-y-1">
+                  {analysis.locations.map((location, index) => (
+                    <li key={index} className="p-2 bg-muted rounded-md">{location}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Key Terms</h3>
+                <ul className="space-y-1">
+                  {analysis.terms.map((term, index) => (
+                    <li key={index} className="p-2 bg-muted rounded-md">{term}</li>
+                  ))}
+                </ul>
+              </div>
             </div>
 
             <div>
-              <h3 className="text-lg font-semibold mb-2">Key Terms</h3>
-              <ul className="space-y-1">
-                {analysis.terms.map((term, index) => (
-                  <li key={index} className="p-2 bg-muted rounded-md">{term}</li>
+              <h3 className="text-lg font-semibold mb-2">Relationships</h3>
+              <ul className="space-y-2">
+                {analysis.relationships.map((rel, index) => (
+                  <li key={index} className="p-2 bg-muted rounded-md">
+                    {rel.from} → {rel.to} ({rel.type})
+                  </li>
                 ))}
               </ul>
             </div>
-          </div>
-
-          <div>
-            <h3 className="text-lg font-semibold mb-2">Relationships</h3>
-            <ul className="space-y-2">
-              {analysis.relationships.map((rel, index) => (
-                <li key={index} className="p-2 bg-muted rounded-md">
-                  {rel.from} → {rel.to} ({rel.type})
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
+          </TabsContent>
+          
+          <TabsContent value="graph">
+            <RelationshipGraph 
+              relationships={analysis.relationships}
+              people={analysis.people}
+              locations={analysis.locations}
+              terms={analysis.terms}
+            />
+          </TabsContent>
+        </Tabs>
       )}
     </div>
   );
