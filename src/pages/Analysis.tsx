@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { useTextAnalysis } from "../services/geminiService";
 import { useToast } from "@/components/ui/use-toast";
+import debounce from 'lodash/debounce'; // Ensure lodash is installed
 
 export default function Analysis() {
   const [isReady, setIsReady] = useState(false);
@@ -17,7 +18,7 @@ export default function Analysis() {
   const { data: analysis, isLoading, error } = useTextAnalysis(content);
 
   const editor = useEditor({
-    onCreate: () => setIsReady(true),
+    onCreate: () => setIsReady(true), // Editor is now fully created
     extensions: [StarterKit],
     content: `<h2>مرحباً بك في نظام تحليل النصوص التاريخية</h2>
 <p>ابدأ بنسخ النص التاريخي هنا. ثم انقر على زر التحليل لاكتشاف العلاقات والكيانات التاريخية.</p>`,
@@ -32,20 +33,15 @@ export default function Analysis() {
     },
   });
 
-  // Use useRef for debounce
-  const debouncedSetContent = useRef(
-    debounce((text) => {
-      setContent(text);
-    }, 500)
-  ).current;
+  const debouncedSetContent = useRef(debounce((text) => {
+    setContent(text);
+  }, 500)).current;
+
 
 
   useEffect(() => {
     if (analysis && !isLoading && !error) {
-      // Dispatch analysis results to Flow component
-      const event = new CustomEvent('analysisResults', {
-        detail: analysis
-      });
+      const event = new CustomEvent('analysisResults', { detail: analysis });
       window.dispatchEvent(event);
 
       toast({
@@ -73,16 +69,20 @@ export default function Analysis() {
           <h1 className="text-3xl font-bold">تحليل النص التاريخي</h1>
           <Button
             onClick={() => setContent(editor?.getText() || '')}
-            disabled={isLoading || !isReady}  // Disable when not ready
+            disabled={isLoading || !isReady}
           >
             {isLoading ? 'جاري التحليل...' : 'تحليل النص'}
           </Button>
         </div>
 
         <Card className="flex-1 p-6">
-          {!editor ? (  // Check if editor is initialized
+          {!editor ? (
             <div className="h-full flex items-center justify-center">
               <p className="text-muted-foreground">جاري تحميل المحرر...</p>
+            </div>
+          ) : !isReady ? (
+            <div className="h-full flex items-center justify-center">
+              <p className="text-muted-foreground">جاري تهيئة المحرر...</p>
             </div>
           ) : (
             <EditorContent
@@ -103,7 +103,7 @@ export default function Analysis() {
             <p className="text-sm text-muted-foreground">
               اكتب نصاً في المحرر واضغط على زر التحليل لرؤية النتائج.
             </p>
-          ) : !analysis.entities || analysis.entities.length === 0 ? (  // Correctly check for entities
+          ) : !analysis.entities || analysis.entities.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               لم يتم العثور على نتائج.
             </p>
