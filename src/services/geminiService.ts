@@ -37,7 +37,7 @@ export async function analyzeText(text: string): Promise<EntityAnalysisResponse>
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${import.meta.env.VITE_GEMINI_API_KEY}`
+      'Authorization': `Bearer ${process.env.GEMINI_API_KEY}`
     },
     body: JSON.stringify({
       contents: [{
