@@ -96,24 +96,22 @@ const FlowContent = () => {
     const flowElement = document.querySelector('.react-flow') as HTMLElement | null;
     if (!flowElement) return;
   
-    // Get the flow wrapper element which contains the actual flow content
+    // Get the flow wrapper element
     const flowWrapper = flowElement.querySelector('.react-flow__viewport') as HTMLElement | null;
     if (!flowWrapper) return;
   
     // Calculate the bounds of all nodes
     const nodesBounds = getNodesBounds(nodes);
-    
-    // Add some padding
     const padding = 50;
     const width = nodesBounds.width + (padding * 2);
     const height = nodesBounds.height + (padding * 2);
   
-    // Save the current transform
+    // Save current styles
     const currentTransform = flowWrapper.style.transform;
     const currentWidth = flowWrapper.style.width;
     const currentHeight = flowWrapper.style.height;
   
-    // Temporarily modify the flow wrapper to capture everything
+    // Temporarily modify the wrapper
     flowWrapper.style.width = `${width}px`;
     flowWrapper.style.height = `${height}px`;
     flowWrapper.style.transform = 'translate(0,0) scale(1)';
@@ -127,10 +125,12 @@ const FlowContent = () => {
         height: `${height}px`,
       },
       filter: (node) => {
-        // Filter out control panels and background
-        const exclude = ['react-flow__panel', 'react-flow__background'];
-        return !exclude.some(className => 
-          node.classList?.contains(className)
+        // Only include nodes and edges
+        return (
+          node.classList?.contains('react-flow__node') ||
+          node.classList?.contains('react-flow__edge') ||
+          node.classList?.contains('react-flow__edge-path') ||
+          node.classList?.contains('react-flow__connection-path')
         );
       }
     })
@@ -144,7 +144,7 @@ const FlowContent = () => {
       pdf.addImage(dataUrl, 'PNG', padding, padding, width - (padding * 2), height - (padding * 2));
       pdf.save('historical-flow.pdf');
   
-      // Restore the original transform and dimensions
+      // Restore original styles
       flowWrapper.style.transform = currentTransform;
       flowWrapper.style.width = currentWidth;
       flowWrapper.style.height = currentHeight;
