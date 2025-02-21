@@ -2,6 +2,7 @@
 'use client';
 
 import { useCallback,useEffect, useState } from "react";
+import debounce from 'lodash/debounce';
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { Card } from "@/components/ui/card";
@@ -30,7 +31,10 @@ export default function Analysis() {
       },
     },
     onUpdate: ({ editor }) => {
-      setContent(editor.getText());
+      const debouncedSetContent = debounce((text) => {
+        setContent(text);
+      }, 500);
+      debouncedSetContent(editor.getText());
     },
   });
 
