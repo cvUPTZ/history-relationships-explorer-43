@@ -49,7 +49,9 @@ export async function analyzeText(text: string): Promise<EntityAnalysisResponse>
   });
 
   if (!response.ok) {
-    throw new Error('Failed to analyze text');
+    const errorText = await response.text();
+    console.error(`Gemini API error: ${response.status} - ${errorText}`);
+    throw new Error(`Failed to analyze text: ${response.status} - ${errorText}`);
   }
 
   const data = await response.json();

@@ -94,6 +94,10 @@ export default function Analysis() {
             <p className="text-sm text-muted-foreground">
               اكتب نصاً في المحرر واضغط على زر التحليل لرؤية النتائج.
             </p>
+          ) : !analysis || !analysis.entities || analysis.entities.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              لم يتم العثور على نتائج.
+            </p>
           ) : (
             <div className="space-y-4">
               {analysis.entities.map((entity, index) => (
