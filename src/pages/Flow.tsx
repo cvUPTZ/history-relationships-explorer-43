@@ -94,12 +94,23 @@ const FlowContent = () => {
   const downloadAsPDF = useCallback(() => {
     if (nodes.length === 0) return;
   
-    const flowElement = document.querySelector('.react-flow') as HTMLElement | null;
-    if (!flowElement) return;
+    // Get just the nodes container
+    const nodesLayer = document.querySelector('.react-flow__nodes') as HTMLElement | null;
+    const edgesLayer = document.querySelector('.react-flow__edges') as HTMLElement | null;
+    if (!nodesLayer || !edgesLayer) return;
   
-    // Get the flow wrapper element
-    const flowWrapper = flowElement.querySelector('.react-flow__viewport') as HTMLElement | null;
-    if (!flowWrapper) return;
+    // Create a temporary container for the export
+    const exportContainer = document.createElement('div');
+    exportContainer.style.position = 'absolute';
+    exportContainer.style.left = '-9999px';
+    exportContainer.style.backgroundColor = '#ffffff';
+    
+    // Clone the nodes and edges
+    const nodesClone = nodesLayer.cloneNode(true);
+    const edgesClone = edgesLayer.cloneNode(true);
+    exportContainer.appendChild(nodesClone);
+    exportContainer.appendChild(edgesClone);
+    document.body.appendChild(exportContainer);
   
     // Calculate the bounds of all nodes
     const nodesBounds = getNodesBounds(nodes);
@@ -107,38 +118,16 @@ const FlowContent = () => {
     const width = nodesBounds.width + (padding * 2);
     const height = nodesBounds.height + (padding * 2);
   
-    // Save current styles
-    const currentTransform = flowWrapper.style.transform;
-    const currentWidth = flowWrapper.style.width;
-    const currentHeight = flowWrapper.style.height;
+    exportContainer.style.width = `${width}px`;
+    exportContainer.style.height = `${height}px`;
   
-    // Temporarily modify the wrapper
-    flowWrapper.style.width = `${width}px`;
-    flowWrapper.style.height = `${height}px`;
-    flowWrapper.style.transform = 'translate(0,0) scale(1)';
-  
-    toPng(flowWrapper, {
+    toPng(exportContainer, {
       backgroundColor: '#ffffff',
       width,
       height,
       style: {
         width: `${width}px`,
         height: `${height}px`,
-      },
-      filter: (node) => {
-        // Exclude UI controls and only include nodes and edges
-        const nodesToInclude = 
-          node.classList?.contains('react-flow__node') ||
-          node.classList?.contains('react-flow__edge') ||
-          node.classList?.contains('react-flow__edge-path') ||
-          node.classList?.contains('react-flow__connection-path');
-        
-        const nodesToExclude =
-          node.classList?.contains('react-flow__controls') ||
-          node.classList?.contains('react-flow__panel') ||
-          node.classList?.contains('react-flow__background');
-  
-        return nodesToInclude && !nodesToExclude;
       }
     })
     .then((dataUrl) => {
@@ -151,14 +140,11 @@ const FlowContent = () => {
       pdf.addImage(dataUrl, 'PNG', padding, padding, width - (padding * 2), height - (padding * 2));
       pdf.save('historical-flow.pdf');
   
-      // Restore original styles
-      flowWrapper.style.transform = currentTransform;
-      flowWrapper.style.width = currentWidth;
-      flowWrapper.style.height = currentHeight;
+      // Clean up
+      document.body.removeChild(exportContainer);
     });
   }, [nodes]);
 
-  
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => setNodes((nds) => applyNodeChanges(changes, nds)),
     []
