@@ -1,8 +1,6 @@
-
 'use client';
 
-import { useCallback,useEffect, useState } from "react";
-import debounce from 'lodash/debounce';
+import { useCallback, useEffect, useState, useRef } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { Card } from "@/components/ui/card";
@@ -16,7 +14,6 @@ export default function Analysis() {
   const [isReady, setIsReady] = useState(false);
   const [content, setContent] = useState('');
   const { toast } = useToast();
-  
   const { data: analysis, isLoading, error } = useTextAnalysis(content);
 
   const editor = useEditor({
@@ -31,12 +28,17 @@ export default function Analysis() {
       },
     },
     onUpdate: ({ editor }) => {
-      const debouncedSetContent = debounce((text) => {
-        setContent(text);
-      }, 500);
       debouncedSetContent(editor.getText());
     },
   });
+
+  // Use useRef for debounce
+  const debouncedSetContent = useRef(
+    debounce((text) => {
+      setContent(text);
+    }, 500)
+  ).current;
+
 
   useEffect(() => {
     if (analysis && !isLoading && !error) {
@@ -53,29 +55,32 @@ export default function Analysis() {
     }
   }, [analysis, isLoading, error, toast]);
 
-  if (error) {
-    toast({
-      variant: "destructive",
-      title: "خطأ في التحليل",
-      description: "حدث خطأ أثناء تحليل النص. يرجى المحاولة مرة أخرى.",
-    });
-  }
+  useEffect(() => {
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "خطأ في التحليل",
+        description: "حدث خطأ أثناء تحليل النص. يرجى المحاولة مرة أخرى.",
+      });
+    }
+  }, [error, toast]);
+
 
   return (
     <div className="flex h-screen bg-background" dir="rtl">
       <div className="flex-1 flex flex-col p-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">تحليل النص التاريخي</h1>
-          <Button 
+          <Button
             onClick={() => setContent(editor?.getText() || '')}
-            disabled={isLoading}
+            disabled={isLoading || !isReady}  // Disable when not ready
           >
             {isLoading ? 'جاري التحليل...' : 'تحليل النص'}
           </Button>
         </div>
 
         <Card className="flex-1 p-6">
-          {!isReady ? (
+          {!editor ? (  // Check if editor is initialized
             <div className="h-full flex items-center justify-center">
               <p className="text-muted-foreground">جاري تحميل المحرر...</p>
             </div>
@@ -98,7 +103,7 @@ export default function Analysis() {
             <p className="text-sm text-muted-foreground">
               اكتب نصاً في المحرر واضغط على زر التحليل لرؤية النتائج.
             </p>
-          ) : !analysis || !analysis.entities || analysis.entities.length === 0 ? (
+          ) : !analysis.entities || analysis.entities.length === 0 ? (  // Correctly check for entities
             <p className="text-sm text-muted-foreground">
               لم يتم العثور على نتائج.
             </p>
