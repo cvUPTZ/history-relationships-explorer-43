@@ -90,27 +90,64 @@ const FlowContent = () => {
     );
     setViewport(viewport);
   }, [nodes, setViewport]);
-
   const downloadAsPDF = useCallback(() => {
     if (nodes.length === 0) return;
-    const nodesBounds = getNodesBounds(nodes);
-    const viewport = getViewportForBounds(nodesBounds, nodesBounds.width, nodesBounds.height, 0.5);
+  
     const flowElement = document.querySelector('.react-flow') as HTMLElement | null;
     if (!flowElement) return;
-
-    toPng(flowElement, {
+  
+    // Get the flow wrapper element which contains the actual flow content
+    const flowWrapper = flowElement.querySelector('.react-flow__viewport') as HTMLElement | null;
+    if (!flowWrapper) return;
+  
+    // Calculate the bounds of all nodes
+    const nodesBounds = getNodesBounds(nodes);
+    
+    // Add some padding
+    const padding = 50;
+    const width = nodesBounds.width + (padding * 2);
+    const height = nodesBounds.height + (padding * 2);
+  
+    // Save the current transform
+    const currentTransform = flowWrapper.style.transform;
+    const currentWidth = flowWrapper.style.width;
+    const currentHeight = flowWrapper.style.height;
+  
+    // Temporarily modify the flow wrapper to capture everything
+    flowWrapper.style.width = `${width}px`;
+    flowWrapper.style.height = `${height}px`;
+    flowWrapper.style.transform = 'translate(0,0) scale(1)';
+  
+    toPng(flowWrapper, {
       backgroundColor: '#ffffff',
-      width: nodesBounds.width,
-      height: nodesBounds.height,
-      style: { transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})` },
-    }).then((dataUrl) => {
+      width,
+      height,
+      style: {
+        width: `${width}px`,
+        height: `${height}px`,
+      },
+      filter: (node) => {
+        // Filter out control panels and background
+        const exclude = ['react-flow__panel', 'react-flow__background'];
+        return !exclude.some(className => 
+          node.classList?.contains(className)
+        );
+      }
+    })
+    .then((dataUrl) => {
       const pdf = new jsPDF({
-        orientation: 'landscape',
+        orientation: width > height ? 'landscape' : 'portrait',
         unit: 'px',
-        format: [nodesBounds.width, nodesBounds.height],
+        format: [width, height]
       });
-      pdf.addImage(dataUrl, 'PNG', 0, 0, nodesBounds.width, nodesBounds.height);
+      
+      pdf.addImage(dataUrl, 'PNG', padding, padding, width - (padding * 2), height - (padding * 2));
       pdf.save('historical-flow.pdf');
+  
+      // Restore the original transform and dimensions
+      flowWrapper.style.transform = currentTransform;
+      flowWrapper.style.width = currentWidth;
+      flowWrapper.style.height = currentHeight;
     });
   }, [nodes]);
 
