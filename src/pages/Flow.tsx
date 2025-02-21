@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useCallback, useState, useEffect } from 'react';
@@ -27,8 +26,55 @@ import { HistoricalEdge, HistoricalEdgeData } from '../components/HistoricalEdge
 import { EdgeDialog } from './EdgeDialog';
 import { getNodePosition, getNodesBounds } from '../utils/flowUtils';
 import { useHighlightStore } from '../utils/highlightStore';
-import { LeftPanel } from '../components/flow/LeftPanel';
 import { RightPanel } from '../components/flow/RightPanel';
+
+interface SidebarProps {
+  onAddEvent: () => void;
+  onAddPerson: () => void;
+  onAddCause: () => void;
+  onDownloadPDF: () => void;
+}
+
+const Sidebar = ({ onAddEvent, onAddPerson, onAddCause, onDownloadPDF }: SidebarProps) => {
+  return (
+    <div className="absolute left-4 top-4 z-50 flex flex-col gap-2 sidebar-controls">
+      <button 
+        className="bg-blue-100 hover:bg-blue-200 px-4 py-2 rounded-md"
+        onClick={onAddEvent}
+      >
+        Add Event
+      </button>
+      <button 
+        className="bg-green-100 hover:bg-green-200 px-4 py-2 rounded-md"
+        onClick={onAddPerson}
+      >
+        Add Person
+      </button>
+      <button 
+        className="bg-red-100 hover:bg-red-200 px-4 py-2 rounded-md"
+        onClick={onAddCause}
+      >
+        Add Cause
+      </button>
+      <button 
+        className="bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-md"
+        onClick={onDownloadPDF}
+      >
+        PDF حفظ
+      </button>
+      
+      <div className="mt-4">
+        <h3 className="font-medium mb-2">PESC Factors</h3>
+        <button className="w-full bg-purple-100 hover:bg-purple-200 px-4 py-2 rounded-md mb-2">
+          Political
+        </button>
+        <button className="w-full bg-yellow-100 hover:bg-yellow-200 px-4 py-2 rounded-md">
+          Economic
+        </button>
+      </div>
+    </div>
+  );
+};
 
 const edgeTypes: EdgeTypes = {
   historical: HistoricalEdge,
@@ -94,40 +140,42 @@ const FlowContent = () => {
   const downloadAsPDF = useCallback(() => {
     if (nodes.length === 0) return;
   
-    // Get just the nodes container
-    const nodesLayer = document.querySelector('.react-flow__nodes') as HTMLElement | null;
-    const edgesLayer = document.querySelector('.react-flow__edges') as HTMLElement | null;
-    if (!nodesLayer || !edgesLayer) return;
+    const flowElement = document.querySelector('.react-flow') as HTMLElement | null;
+    if (!flowElement) return;
   
-    // Create a temporary container for the export
-    const exportContainer = document.createElement('div');
-    exportContainer.style.position = 'absolute';
-    exportContainer.style.left = '-9999px';
-    exportContainer.style.backgroundColor = '#ffffff';
-    
-    // Clone the nodes and edges
-    const nodesClone = nodesLayer.cloneNode(true);
-    const edgesClone = edgesLayer.cloneNode(true);
-    exportContainer.appendChild(nodesClone);
-    exportContainer.appendChild(edgesClone);
-    document.body.appendChild(exportContainer);
+    const flowWrapper = flowElement.querySelector('.react-flow__viewport') as HTMLElement | null;
+    if (!flowWrapper) return;
   
-    // Calculate the bounds of all nodes
     const nodesBounds = getNodesBounds(nodes);
     const padding = 50;
     const width = nodesBounds.width + (padding * 2);
     const height = nodesBounds.height + (padding * 2);
   
-    exportContainer.style.width = `${width}px`;
-    exportContainer.style.height = `${height}px`;
+    const currentTransform = flowWrapper.style.transform;
+    const currentWidth = flowWrapper.style.width;
+    const currentHeight = flowWrapper.style.height;
   
-    toPng(exportContainer, {
+    flowWrapper.style.width = `${width}px`;
+    flowWrapper.style.height = `${height}px`;
+    flowWrapper.style.transform = 'translate(0,0) scale(1)';
+  
+    toPng(flowWrapper, {
       backgroundColor: '#ffffff',
       width,
       height,
       style: {
         width: `${width}px`,
         height: `${height}px`,
+      },
+      filter: (node) => {
+        const isNotSidebar = !node.classList?.contains('sidebar-controls');
+        const isFlowContent = 
+          node.classList?.contains('react-flow__node') ||
+          node.classList?.contains('react-flow__edge') ||
+          node.classList?.contains('react-flow__edge-path') ||
+          node.classList?.contains('react-flow__connection-path');
+        
+        return isNotSidebar && isFlowContent;
       }
     })
     .then((dataUrl) => {
@@ -140,8 +188,9 @@ const FlowContent = () => {
       pdf.addImage(dataUrl, 'PNG', padding, padding, width - (padding * 2), height - (padding * 2));
       pdf.save('historical-flow.pdf');
   
-      // Clean up
-      document.body.removeChild(exportContainer);
+      flowWrapper.style.transform = currentTransform;
+      flowWrapper.style.width = currentWidth;
+      flowWrapper.style.height = currentHeight;
     });
   }, [nodes]);
 
@@ -214,7 +263,13 @@ const FlowContent = () => {
   if (!isMounted) return null;
 
   return (
-    <div className="h-screen w-full">
+    <div className="h-screen w-full relative">
+      <Sidebar 
+        onAddEvent={() => addNode('event')}
+        onAddPerson={() => addNode('person')}
+        onAddCause={() => addNode('cause')}
+        onDownloadPDF={downloadAsPDF}
+      />
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -228,11 +283,6 @@ const FlowContent = () => {
       >
         <Background />
         <Controls />
-        <LeftPanel
-          onFitView={fitView}
-          onDownloadPDF={downloadAsPDF}
-          onAddNode={addNode}
-        />
         <RightPanel
           highlights={highlights}
           onCreateNodeFromHighlight={createNodeFromHighlight}
