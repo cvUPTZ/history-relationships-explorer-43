@@ -1,14 +1,11 @@
-// Flow.tsx
+
 'use client';
 
 import { useCallback, useState, useEffect } from 'react';
-import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useHighlightStore } from '../utils/highlightStore';
 import '@xyflow/react/dist/style.css';
 import {
   ReactFlow,
+  ReactFlowProvider,
   EdgeTypes,
   MarkerType,
   Background,
@@ -18,7 +15,6 @@ import {
   NodeChange,
   Connection,
   EdgeChange,
-  Panel,
   applyNodeChanges,
   applyEdgeChanges,
   getViewportForBounds,
@@ -26,12 +22,13 @@ import {
 } from '@xyflow/react';
 import { toPng } from 'html-to-image';
 import { jsPDF } from 'jspdf';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Download, ZoomIn } from 'lucide-react';
 import HistoricalNode, { NodeType, HistoricalNodeData } from '../components/HistoricalNode';
 import { HistoricalEdge, HistoricalEdgeData } from '../components/HistoricalEdge';
-import { EdgeDialog } from './EdgeDialog';  // Import it here
+import { EdgeDialog } from './EdgeDialog';
+import { getNodePosition, getNodesBounds } from '../utils/flowUtils';
+import { useHighlightStore } from '../utils/highlightStore';
+import { LeftPanel } from '../components/flow/LeftPanel';
+import { RightPanel } from '../components/flow/RightPanel';
 
 const edgeTypes: EdgeTypes = {
   historical: HistoricalEdge,
@@ -53,51 +50,7 @@ const nodeTypes = {
 const initialNodes: Node<HistoricalNodeData>[] = [];
 const initialEdges: Edge<HistoricalEdgeData>[] = [];
 
-
-const getNodePosition = (nodes: Node[]): { x: number; y: number } => {
-  if (nodes.length === 0) return { x: 100, y: 100 };
-
-  const lastNode = nodes[nodes.length - 1];
-  return {
-    x: lastNode.position.x + 250,
-    y: lastNode.position.y,
-  };
-};
-
-// Custom function to calculate the bounding rectangle of nodes
-const getNodesBounds = (nodes: Node[]): { x: number; y: number; width: number; height: number } => {
-  if (nodes.length === 0) {
-    return { x: 0, y: 0, width: 0, height: 0 };
-  }
-
-  let minX = Infinity;
-  let minY = Infinity;
-  let maxX = -Infinity;
-  let maxY = -Infinity;
-
-  nodes.forEach((node) => {
-    const x = node.position.x;
-    const y = node.position.y;
-    // Use node.width and node.height if available; otherwise, assume defaults
-    const width = node.width || 240; // e.g., 'w-60' in Tailwind is 240px
-    const height = node.height || 100; // Adjust based on your node design
-    minX = Math.min(minX, x);
-    minY = Math.min(minY, y);
-    maxX = Math.max(maxX, x + width);
-    maxY = Math.max(maxY, y + height);
-  });
-
-  // Add padding to ensure all nodes are captured
-  const padding = 50;
-  return {
-    x: minX - padding,
-    y: minY - padding,
-    width: maxX - minX + 2 * padding,
-    height: maxY - minY + 2 * padding,
-  };
-};
-
-export default function Flow() {
+const FlowContent = () => {
   const [isMounted, setIsMounted] = useState(false);
   const [nodes, setNodes] = useState<Node<HistoricalNodeData>[]>(initialNodes);
   const [edges, setEdges] = useState<Edge<HistoricalEdgeData>[]>(initialEdges);
@@ -128,20 +81,20 @@ export default function Flow() {
   const fitView = useCallback(() => {
     if (nodes.length === 0) return;
     const bounds = getNodesBounds(nodes);
-    const { x, y, zoom } = getViewportForBounds(
+    const viewport = getViewportForBounds(
       bounds,
       window.innerWidth,
       window.innerHeight,
       0.5,
       2
     );
-    setViewport({ x, y, zoom });
+    setViewport(viewport);
   }, [nodes, setViewport]);
 
   const downloadAsPDF = useCallback(() => {
     if (nodes.length === 0) return;
     const nodesBounds = getNodesBounds(nodes);
-    const { x, y, zoom } = getViewportForBounds(nodesBounds, nodesBounds.width, nodesBounds.height, 0.5);
+    const viewport = getViewportForBounds(nodesBounds, nodesBounds.width, nodesBounds.height, 0.5);
     const flowElement = document.querySelector('.react-flow') as HTMLElement | null;
     if (!flowElement) return;
 
@@ -149,7 +102,7 @@ export default function Flow() {
       backgroundColor: '#ffffff',
       width: nodesBounds.width,
       height: nodesBounds.height,
-      style: { transform: `translate(${x}px, ${y}px) scale(${zoom})` },
+      style: { transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})` },
     }).then((dataUrl) => {
       const pdf = new jsPDF({
         orientation: 'landscape',
@@ -244,163 +197,15 @@ export default function Flow() {
       >
         <Background />
         <Controls />
-        <Panel position="top-left" className="bg-background/50 backdrop-blur-sm p-2 rounded-lg">
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={fitView} className="flex items-center gap-2">
-              <ZoomIn size={16} />
-              Fit View
-            </Button>
-            <Button variant="outline" size="sm" onClick={downloadAsPDF} className="flex items-center gap-2">
-              <Download size={16} />
-              حفظ كـ PDF
-            </Button>
-          </div>
-        </Panel>
-        <Panel position="top-right" className="bg-background/50 backdrop-blur-sm p-4 rounded-lg w-80">
-          <div className="space-y-4">
-            <h3 className="font-semibold">Highlighted Passages</h3>
-            {highlights.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No highlights available. Select text in the Analysis page to create nodes.
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {highlights.map((highlight) => (
-                  <Card key={highlight.id} className="p-3">
-                    <p className="text-sm mb-2">{highlight.text}</p>
-                    <div className="space-y-2">
-                      <div className="flex flex-wrap gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="bg-blue-50 hover:bg-blue-100"
-                          onClick={() => createNodeFromHighlight(highlight, 'event')}
-                        >
-                          Event
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="bg-green-50 hover:bg-green-100"
-                          onClick={() => createNodeFromHighlight(highlight, 'person')}
-                        >
-                          Person
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="bg-red-50 hover:bg-red-100"
-                          onClick={() => createNodeFromHighlight(highlight, 'cause')}
-                        >
-                          Cause
-                        </Button>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="bg-purple-50 hover:bg-purple-100"
-                          onClick={() => createNodeFromHighlight(highlight, 'political')}
-                        >
-                          Political
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="bg-yellow-50 hover:bg-yellow-100"
-                          onClick={() => createNodeFromHighlight(highlight, 'economic')}
-                        >
-                          Economic
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="bg-pink-50 hover:bg-pink-100"
-                          onClick={() => createNodeFromHighlight(highlight, 'social')}
-                        >
-                          Social
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="bg-indigo-50 hover:bg-indigo-100"
-                          onClick={() => createNodeFromHighlight(highlight, 'cultural')}
-                        >
-                          Cultural
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
-        </Panel>
-        <Panel position="top-left" className="bg-background/50 backdrop-blur-sm p-2 rounded-lg">
-          <div className="flex flex-col gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => addNode('event')}
-              className="bg-blue-50 hover:bg-blue-100"
-            >
-              Add Event
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => addNode('person')}
-              className="bg-green-50 hover:bg-green-100"
-            >
-              Add Person
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => addNode('cause')}
-              className="bg-red-50 hover:bg-red-100"
-            >
-              Add Cause
-            </Button>
-            <Card className="p-2">
-              <p className="text-xs font-medium mb-2">PESC Factors</p>
-              <div className="flex flex-col gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => addNode('political')}
-                  className="bg-purple-50 hover:bg-purple-100"
-                >
-                  Political
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => addNode('economic')}
-                  className="bg-yellow-50 hover:bg-yellow-100"
-                >
-                  Economic
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => addNode('social')}
-                  className="bg-pink-50 hover:bg-pink-100"
-                >
-                  Social
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => addNode('cultural')}
-                  className="bg-indigo-50 hover:bg-indigo-100"
-                >
-                  Cultural
-                </Button>
-              </div>
-            </Card>
-          </div>
-        </Panel>
+        <LeftPanel
+          onFitView={fitView}
+          onDownloadPDF={downloadAsPDF}
+          onAddNode={addNode}
+        />
+        <RightPanel
+          highlights={highlights}
+          onCreateNodeFromHighlight={createNodeFromHighlight}
+        />
       </ReactFlow>
       <EdgeDialog
         isOpen={isEdgeDialogOpen}
@@ -409,5 +214,13 @@ export default function Flow() {
         defaultType="related-to"
       />
     </div>
+  );
+};
+
+export default function Flow() {
+  return (
+    <ReactFlowProvider>
+      <FlowContent />
+    </ReactFlowProvider>
   );
 }
