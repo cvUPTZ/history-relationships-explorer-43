@@ -90,6 +90,7 @@ const FlowContent = () => {
     );
     setViewport(viewport);
   }, [nodes, setViewport]);
+
   const downloadAsPDF = useCallback(() => {
     if (nodes.length === 0) return;
   
@@ -125,13 +126,19 @@ const FlowContent = () => {
         height: `${height}px`,
       },
       filter: (node) => {
-        // Only include nodes and edges
-        return (
+        // Exclude UI controls and only include nodes and edges
+        const nodesToInclude = 
           node.classList?.contains('react-flow__node') ||
           node.classList?.contains('react-flow__edge') ||
           node.classList?.contains('react-flow__edge-path') ||
-          node.classList?.contains('react-flow__connection-path')
-        );
+          node.classList?.contains('react-flow__connection-path');
+        
+        const nodesToExclude =
+          node.classList?.contains('react-flow__controls') ||
+          node.classList?.contains('react-flow__panel') ||
+          node.classList?.contains('react-flow__background');
+  
+        return nodesToInclude && !nodesToExclude;
       }
     })
     .then((dataUrl) => {
@@ -151,6 +158,7 @@ const FlowContent = () => {
     });
   }, [nodes]);
 
+  
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => setNodes((nds) => applyNodeChanges(changes, nds)),
     []
