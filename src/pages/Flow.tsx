@@ -1,4 +1,3 @@
-// Flow.tsx
 'use client';
 
 import { useCallback, useState, useEffect } from 'react';
@@ -9,6 +8,7 @@ import { useHighlightStore } from '../utils/highlightStore';
 import '@xyflow/react/dist/style.css';
 import {
   ReactFlow,
+  ReactFlowProvider,
   EdgeTypes,
   MarkerType,
   Background,
@@ -31,7 +31,7 @@ import { Button } from '@/components/ui/button';
 import { Download, ZoomIn } from 'lucide-react';
 import HistoricalNode, { NodeType, HistoricalNodeData } from '../components/HistoricalNode';
 import { HistoricalEdge, HistoricalEdgeData } from '../components/HistoricalEdge';
-import { EdgeDialog } from './EdgeDialog';  // Import it here
+import { EdgeDialog } from './EdgeDialog';
 
 const edgeTypes: EdgeTypes = {
   historical: HistoricalEdge,
@@ -53,7 +53,6 @@ const nodeTypes = {
 const initialNodes: Node<HistoricalNodeData>[] = [];
 const initialEdges: Edge<HistoricalEdgeData>[] = [];
 
-
 const getNodePosition = (nodes: Node[]): { x: number; y: number } => {
   if (nodes.length === 0) return { x: 100, y: 100 };
 
@@ -64,7 +63,6 @@ const getNodePosition = (nodes: Node[]): { x: number; y: number } => {
   };
 };
 
-// Custom function to calculate the bounding rectangle of nodes
 const getNodesBounds = (nodes: Node[]): { x: number; y: number; width: number; height: number } => {
   if (nodes.length === 0) {
     return { x: 0, y: 0, width: 0, height: 0 };
@@ -78,16 +76,14 @@ const getNodesBounds = (nodes: Node[]): { x: number; y: number; width: number; h
   nodes.forEach((node) => {
     const x = node.position.x;
     const y = node.position.y;
-    // Use node.width and node.height if available; otherwise, assume defaults
-    const width = node.width || 240; // e.g., 'w-60' in Tailwind is 240px
-    const height = node.height || 100; // Adjust based on your node design
+    const width = node.width || 240;
+    const height = node.height || 100;
     minX = Math.min(minX, x);
     minY = Math.min(minY, y);
     maxX = Math.max(maxX, x + width);
     maxY = Math.max(maxY, y + height);
   });
 
-  // Add padding to ensure all nodes are captured
   const padding = 50;
   return {
     x: minX - padding,
@@ -97,7 +93,7 @@ const getNodesBounds = (nodes: Node[]): { x: number; y: number; width: number; h
   };
 };
 
-export default function Flow() {
+const FlowContent = () => {
   const [isMounted, setIsMounted] = useState(false);
   const [nodes, setNodes] = useState<Node<HistoricalNodeData>[]>(initialNodes);
   const [edges, setEdges] = useState<Edge<HistoricalEdgeData>[]>(initialEdges);
@@ -409,5 +405,13 @@ export default function Flow() {
         defaultType="related-to"
       />
     </div>
+  );
+};
+
+export default function Flow() {
+  return (
+    <ReactFlowProvider>
+      <FlowContent />
+    </ReactFlowProvider>
   );
 }

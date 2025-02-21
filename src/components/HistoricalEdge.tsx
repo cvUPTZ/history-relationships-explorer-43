@@ -1,7 +1,7 @@
 
 import { BaseEdge, EdgeLabelRenderer, EdgeProps, getBezierPath } from '@xyflow/react';
 
-export interface HistoricalEdgeData extends Record<string, unknown> {
+export interface HistoricalEdgeData {
   type: string;
   customLabel?: string;
 }
