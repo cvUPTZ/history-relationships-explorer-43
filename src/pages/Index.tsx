@@ -1,17 +1,15 @@
-
-import { useState, useCallback } from 'react';
-import { Node, Edge } from '@xyflow/react';
-import Analysis from './Analysis';
-import Flow from './Flow';
-
+// src/pages/Index.jsx
+import { useState } from 'react';
+import Analysis from '../components/Analysis';
+import Flow from '../components/Flow';
 
 export default function HomePage() {
   return (
-    <div dir="rtl" className="grid grid-cols-2 gap-4 p-4">
-      <div>
+    <div dir="rtl" className="grid grid-cols-2 gap-4 p-4 h-screen">
+      <div className="overflow-auto">
         <Analysis />
       </div>
-      <div>
+      <div className="overflow-auto">
         <Flow />
       </div>
     </div>
