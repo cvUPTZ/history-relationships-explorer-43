@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useCallback, useState, useEffect } from 'react';
@@ -18,6 +19,7 @@ import {
     applyEdgeChanges,
     getViewportForBounds,
     useReactFlow,
+    Viewport,
 } from '@xyflow/react';
 import { toPng } from 'html-to-image';
 import { jsPDF } from 'jspdf';
@@ -69,7 +71,7 @@ const FlowContent = () => {
             const customEvent = event as CustomEvent<{ id: string; data: HistoricalNodeData }>;
             const { id, data } = customEvent.detail;
             setNodes((nds) =>
-                nds.map((node) => (node.id === id ? { ...node, data } : node))
+                nds.map((node) => (node.id === id ? { ...node, data } : node)) as Node<HistoricalNodeData>[]
             );
         };
 
@@ -80,37 +82,32 @@ const FlowContent = () => {
     const fitView = useCallback(() => {
         if (nodes.length === 0) return;
         const bounds = getNodesBounds(nodes);
-        const viewport = getViewportForBounds(
-            bounds,
-            window.innerWidth,
-            window.innerHeight,
-            0.5,
-            2
-        );
+        const viewport: Viewport = {
+            x: bounds.x,
+            y: bounds.y,
+            zoom: 1,
+        };
         setViewport(viewport);
     }, [nodes, setViewport]);
+
     const downloadAsPDF = useCallback(() => {
         if (nodes.length === 0) return;
 
         const flowElement = document.querySelector('.react-flow') as HTMLElement | null;
         if (!flowElement) return;
 
-        // Get the flow wrapper element
         const flowWrapper = flowElement.querySelector('.react-flow__viewport') as HTMLElement | null;
         if (!flowWrapper) return;
 
-        // Calculate the bounds of all nodes
         const nodesBounds = getNodesBounds(nodes);
         const padding = 50;
         const width = nodesBounds.width + (padding * 2);
         const height = nodesBounds.height + (padding * 2);
 
-        // Save current styles
         const currentTransform = flowWrapper.style.transform;
         const currentWidth = flowWrapper.style.width;
         const currentHeight = flowWrapper.style.height;
 
-        // Temporarily modify the wrapper
         flowWrapper.style.width = `${width}px`;
         flowWrapper.style.height = `${height}px`;
         flowWrapper.style.transform = 'translate(0,0) scale(1)';
@@ -124,7 +121,6 @@ const FlowContent = () => {
                 height: `${height}px`,
             },
             filter: (node) => {
-                // Only include nodes and edges
                 return (
                     node.classList?.contains('react-flow__node') ||
                     node.classList?.contains('react-flow__edge') ||
@@ -143,7 +139,6 @@ const FlowContent = () => {
                 pdf.addImage(dataUrl, 'PNG', padding, padding, width - (padding * 2), height - (padding * 2));
                 pdf.save('historical-flow.pdf');
 
-                // Restore original styles
                 flowWrapper.style.transform = currentTransform;
                 flowWrapper.style.width = currentWidth;
                 flowWrapper.style.height = currentHeight;
@@ -151,12 +146,12 @@ const FlowContent = () => {
     }, [nodes]);
 
     const onNodesChange = useCallback(
-        (changes: NodeChange[]) => setNodes((nds) => applyNodeChanges(changes, nds)),
+        (changes: NodeChange[]) => setNodes((nds) => applyNodeChanges(changes, nds) as Node<HistoricalNodeData>[]),
         []
     );
 
     const onEdgesChange = useCallback(
-        (changes: EdgeChange[]) => setEdges((eds) => applyEdgeChanges(changes, eds)),
+        (changes: EdgeChange[]) => setEdges((eds) => applyEdgeChanges(changes, eds) as Edge<HistoricalEdgeData>[]),
         []
     );
 
@@ -209,7 +204,7 @@ const FlowContent = () => {
                 id: `${Date.now()}`,
                 type: 'historical',
                 position: getNodePosition(nodes),
-                data: { type, label: `New ${type}`, description: `Description for new ${type}` },
+                data: { type, label: `New ${type}`, description: '' },
             };
             setNodes((nds) => [...nds, newNode]);
         },
