@@ -1,4 +1,4 @@
-
+// pages/analysis.tsx
 'use client';
 
 import React, { useCallback, useState } from "react";
@@ -12,6 +12,7 @@ import { useHighlightStore } from "../utils/highlightStore";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import RelationshipsTable from '../components/RelationshipsTable';
+import { ErrorBoundary } from 'react-error-boundary';
 
 interface Relationship {
   source: string;
@@ -19,7 +20,17 @@ interface Relationship {
   type: string;
 }
 
-export default function Analysis() {
+function ErrorFallback({ error, resetErrorBoundary }) {
+  return (
+    <div className="p-4 border border-red-500 rounded">
+      <h2 className="text-lg font-bold text-red-500">Something went wrong:</h2>
+      <pre className="text-sm">{error.message}</pre>
+      <Button onClick={resetErrorBoundary}>Try again</Button>
+    </div>
+  );
+}
+
+function AnalysisContent() {
   const [text, setText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [temperature, setTemperature] = useState([0.7]);
@@ -51,25 +62,28 @@ export default function Analysis() {
       setRelationships(data.relationships);
 
       if (autoHighlight) {
-        // Highlight both source and target entities
         data.relationships.forEach((rel: Relationship) => {
-          [rel.source, rel.target].forEach(entity => {
-            const startIndex = text.indexOf(entity);
-            if (startIndex !== -1) {
-              addHighlight({
-                id: `highlight-${Date.now()}-${Math.random()}`,
-                text: entity,
-                from: startIndex,
-                to: startIndex + entity.length,
-              });
-            }
-          });
+          try {
+            [rel.source, rel.target].forEach(entity => {
+              const startIndex = text.indexOf(entity);
+              if (startIndex !== -1) {
+                addHighlight({
+                  id: `highlight-${Date.now()}-${Math.random()}`,
+                  text: entity,
+                  from: startIndex,
+                  to: startIndex + entity.length,
+                });
+              }
+            });
+          } catch (err) {
+            console.error("Highlighting error:", err);
+          }
         });
       }
 
       toast.success("Analysis complete!");
 
-    } catch (error: any) {
+    } catch (error) {
       console.error("Analysis error:", error);
       toast.error(error.message || "Failed to analyze text");
     } finally {
@@ -78,7 +92,7 @@ export default function Analysis() {
   }, [text, temperature, autoHighlight, addHighlight]);
 
   return (
-    <div className="space-y-4">
+    <div className="container mx-auto p-4 space-y-4">
       <div className="space-y-2">
         <Label>Historical Text</Label>
         <Textarea
@@ -151,5 +165,13 @@ export default function Analysis() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function Analysis() {
+  return (
+    <ErrorBoundary FallbackComponent={ErrorFallback}>
+      <AnalysisContent />
+    </ErrorBoundary>
   );
 }
