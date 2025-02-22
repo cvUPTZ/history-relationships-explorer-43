@@ -1,4 +1,6 @@
+
 import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Entity {
     text: string;
@@ -16,25 +18,19 @@ interface EntityAnalysisResponse {
 }
 
 async function analyzeText(text: string): Promise<EntityAnalysisResponse> {
-    const response = await fetch('/api/analyze', { // Calling backend API route
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ text }),
+    const { data, error } = await supabase.functions.invoke('analyze-text', {
+        body: { text },
     });
 
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`Failed to analyze text: ${response.status} - ${errorData.error || 'Unknown error'}`);
+    if (error) {
+        throw new Error(`Failed to analyze text: ${error.message}`);
     }
 
-    const data = await response.json();
     return data;
 }
 
 export function useTextAnalysis(text: string) {
-    return useQuery<EntityAnalysisResponse, Error>({ // Explicit type definitions and Error type
+    return useQuery({
         queryKey: ['textAnalysis', text],
         queryFn: () => analyzeText(text),
         enabled: !!text && text.length > 0,

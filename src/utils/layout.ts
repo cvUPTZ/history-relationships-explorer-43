@@ -1,45 +1,47 @@
-import Elk from 'elkjs/lib/elk.bundled.js';
+
 import { Node, Edge } from '@xyflow/react';
+import dagre from 'dagre';
 
-export interface Position {
-  x: number;
-  y: number;
-}
+const dagreGraph = new dagre.graphlib.Graph();
+dagreGraph.setDefaultEdgeLabel(() => ({}));
 
-export interface Size {
-  width: number;
-  height: number;
-}
+const nodeWidth = 200;
+const nodeHeight = 100;
 
-export async function elkLayout(nodes: Node[], edges: Edge[]) {
-  const elk = new Elk({
-    defaultLayoutOptions: {
-      'elk.algorithm': 'layered',
-      'elk.direction': 'RIGHT',
-      'elk.spacing.nodeNode': 100,
-      'elk.layered.spacing.nodeNodeBetweenLayers': 150,
-    },
+export const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'TB') => {
+  const isHorizontal = direction === 'LR';
+  dagreGraph.setGraph({ rankdir: direction });
+
+  // Clear the graph before adding new nodes
+  dagreGraph.setGraph({});
+
+  // Add nodes to the graph
+  nodes.forEach((node) => {
+    dagreGraph.setNode(node.id || '', { width: nodeWidth, height: nodeHeight });
   });
 
-  const graph = await elk.layout({
-    id: 'root',
-    children: nodes.map(node => ({
-      id: node.id,
-      width: 240,
-      height: node.data.type === 'event' ? 160 : 120,
-    })),
-    edges: edges.map(edge => ({
-      id: edge.id,
-      sources: [edge.source],
-      targets: [edge.target],
-    })),
+  // Add edges to the graph
+  edges.forEach((edge) => {
+    if (edge.source && edge.target) {
+      dagreGraph.setEdge(edge.source, edge.target);
+    }
   });
 
-  return nodes.map(node => {
-    const elkNode = graph.children?.find(n => n.id === node.id);
+  dagre.layout(dagreGraph);
+
+  // Get the positioned nodes
+  const layoutedNodes = nodes.map((node) => {
+    if (!node.id) return node;
+
+    const nodeWithPosition = dagreGraph.node(node.id);
     return {
       ...node,
-      position: { x: elkNode?.x || 0, y: elkNode?.y || 0 },
+      position: {
+        x: nodeWithPosition.x - nodeWidth / 2,
+        y: nodeWithPosition.y - nodeHeight / 2,
+      },
     };
   });
-}
+
+  return { nodes: layoutedNodes, edges };
+};

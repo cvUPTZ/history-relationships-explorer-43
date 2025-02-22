@@ -1,47 +1,53 @@
 
-import { BaseEdge, EdgeLabelRenderer, EdgeProps, getBezierPath } from '@xyflow/react';
+import { BaseEdge, EdgeLabelRenderer, EdgeProps } from '@xyflow/react';
+import { useCallback } from 'react';
 
-export interface HistoricalEdgeData {
-  type: string;
+interface HistoricalEdgeData extends Record<string, unknown> {
   customLabel?: string;
+  type?: string;
 }
 
-export function HistoricalEdge({
+interface HistoricalEdgeProps extends EdgeProps<HistoricalEdgeData> {
+  id: string;
+  source: string;
+  target: string;
+  data?: HistoricalEdgeData;
+}
+
+export default function HistoricalEdge({
   id,
   sourceX,
   sourceY,
   targetX,
   targetY,
-  sourcePosition,
-  targetPosition,
-  style = {},
-  markerEnd,
+  source,
+  target,
   data,
-}: EdgeProps<HistoricalEdgeData>) {
-  const [edgePath, labelX, labelY] = getBezierPath({
-    sourceX,
-    sourceY,
-    sourcePosition,
-    targetX,
-    targetY,
-    targetPosition,
-  });
+}: HistoricalEdgeProps) {
+  const onEdgeClick = useCallback((evt: React.MouseEvent<HTMLButtonElement>) => {
+    evt.stopPropagation();
+    console.log('Edge clicked:', { id, source, target });
+  }, [id, source, target]);
 
   return (
     <>
-      <BaseEdge path={edgePath} markerEnd={markerEnd} style={style} />
+      <BaseEdge id={id} sourceX={sourceX} sourceY={sourceY} targetX={targetX} targetY={targetY} />
       <EdgeLabelRenderer>
         <div
           style={{
             position: 'absolute',
-            transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
+            transform: `translate(-50%, -50%) translate(${(sourceX + targetX) / 2}px,${(sourceY + targetY) / 2}px)`,
+            fontSize: 12,
             pointerEvents: 'all',
           }}
           className="nodrag nopan"
         >
-          <div className="px-2 py-1 bg-white rounded shadow-sm border text-sm">
-            {data?.customLabel || data?.type || 'connected'}
-          </div>
+          <button 
+            className="edge-button"
+            onClick={onEdgeClick}
+          >
+            {data?.customLabel || data?.type || ''}
+          </button>
         </div>
       </EdgeLabelRenderer>
     </>
