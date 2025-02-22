@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useCallback, useState } from "react";
@@ -68,7 +69,7 @@ export default function Analysis() {
 
       toast.success("Analysis complete!");
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Analysis error:", error);
       toast.error(error.message || "Failed to analyze text");
     } finally {
