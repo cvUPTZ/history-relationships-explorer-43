@@ -96,6 +96,7 @@ export default function HomePage() {
   return (
     <div className="flex h-screen overflow-hidden">
       <Toaster />
+      
       <div className="w-1/4 min-w-[300px] max-w-md border-r border-gray-200 overflow-auto bg-gray-50">
         <div className="p-4">
           <Analysis onAnalysisComplete={handleAnalysisComplete} />
