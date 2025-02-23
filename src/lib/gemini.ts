@@ -1,5 +1,6 @@
 // pages/api/analyze.ts (Next.js API route example)
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { createClient } from '@supabase/supabase-js';
 
 // **IMPORTANT:** Replace with the actual Gemini API library and key setup
 // For demonstration purposes, I'm using a placeholder.
@@ -15,6 +16,11 @@ interface GeminiResponse {
   entities: Entity[];
   error?: string;
 }
+
+export const supabase = createClient(
+  process.env.VITE_SUPABASE_URL || '',
+  process.env.VITE_SUPABASE_ANON_KEY || ''
+);
 
 export default async function handler(
   req: NextApiRequest,

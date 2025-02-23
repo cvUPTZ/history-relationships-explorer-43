@@ -2,7 +2,7 @@
 import { BaseEdge, EdgeLabelRenderer, EdgeProps } from '@xyflow/react';
 import { useCallback } from 'react';
 
-export interface HistoricalEdgeData {
+export interface HistoricalEdgeData extends Record<string, unknown> {
   customLabel?: string;
   type?: string;
 }

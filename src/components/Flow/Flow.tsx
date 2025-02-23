@@ -22,8 +22,8 @@ import HistoricalEdge, { HistoricalEdgeData } from '../HistoricalEdge';
 import { EdgeDialog } from '../../pages/EdgeDialog';
 import { getNodePosition } from '../../utils/flowUtils';
 import { useHighlightStore } from '../../utils/highlightStore';
-import { LeftPanel } from './LeftPanel';
-import { RightPanel } from './RightPanel';
+import { LeftPanel } from '../../components/flow/LeftPanel';
+import { RightPanel } from '../../components/flow/RightPanel';
 
 const edgeTypes: EdgeTypes = {
     historical: HistoricalEdge,
