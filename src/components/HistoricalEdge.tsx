@@ -2,12 +2,12 @@
 import { BaseEdge, EdgeLabelRenderer, EdgeProps } from '@xyflow/react';
 import { useCallback } from 'react';
 
-interface HistoricalEdgeData extends Record<string, unknown> {
+export interface HistoricalEdgeData {
   customLabel?: string;
   type?: string;
 }
 
-interface HistoricalEdgeProps extends EdgeProps<HistoricalEdgeData> {
+export interface HistoricalEdgeProps extends Omit<EdgeProps, 'data'> {
   id: string;
   source: string;
   target: string;
@@ -31,7 +31,7 @@ export default function HistoricalEdge({
 
   return (
     <>
-      <BaseEdge id={id} sourceX={sourceX} sourceY={sourceY} targetX={targetX} targetY={targetY} />
+      <BaseEdge path={`M ${sourceX} ${sourceY} L ${targetX} ${targetY}`} />
       <EdgeLabelRenderer>
         <div
           style={{
