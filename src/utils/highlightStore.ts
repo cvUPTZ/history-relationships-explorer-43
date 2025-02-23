@@ -1,64 +1,43 @@
+// src/utils/highlightStore.ts
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
-interface Highlight {
-    id: string;
-    text: string;
-    from: number;
-    to: number;
+export interface Highlight {
+  id: string;
+  text: string;
+  from: number;
+  to: number;
 }
 
-interface HighlightStore {
-    highlights: Highlight[];
-    addHighlight: (highlight: Highlight) => void;
-    removeHighlight: (id: string) => void;
-    clearHighlights: () => void;
+interface HighlightState {
+  highlights: Highlight[];
+  addHighlight: (highlight: Highlight) => void;
+  removeHighlight: (id: string) => void;
+  updateHighlight: (highlight: Highlight) => void;
+  clearHighlights: () => void;
+  setHighlights: (highlights: Highlight[]) => void;
 }
 
-// Helper function to safely get stored highlights
-const getStoredHighlights = (): Highlight[] => {
-    if (typeof window === 'undefined') return [];
-    
-    try {
-        const stored = localStorage.getItem('highlights');
-        return stored ? JSON.parse(stored) : [];
-    } catch (error) {
-        console.error('Error loading highlights from localStorage:', error);
-        return [];
+export const useHighlightStore = create<HighlightState>()(
+  persist(
+    (set, get) => ({
+      highlights: [],
+      addHighlight: (highlight: Highlight) =>
+        set((state) => ({ highlights: [...state.highlights, highlight] })),
+      removeHighlight: (id: string) =>
+        set((state) => ({ highlights: state.highlights.filter((h) => h.id !== id) })),
+      updateHighlight: (highlight: Highlight) =>
+        set((state) => ({
+          highlights: state.highlights.map((h) =>
+            h.id === highlight.id ? { ...h, ...highlight } : h
+          ),
+        })),
+      clearHighlights: () => set({ highlights: [] }),
+      setHighlights: (highlights: Highlight[]) => set({ highlights }),
+    }),
+    {
+      name: 'highlight-store', // key for localStorage
+      // Optionally, specify storage: getStorage() => localStorage
     }
-};
-
-export const useHighlightStore = create<HighlightStore>((set, get) => ({
-    // Initialize with stored highlights
-    highlights: getStoredHighlights(),
-    
-    addHighlight: (highlight) => {
-        try {
-            set((state) => ({
-                highlights: [...state.highlights, highlight],
-            }));
-            localStorage.setItem('highlights', JSON.stringify(get().highlights));
-        } catch (error) {
-            console.error('Error adding highlight:', error);
-        }
-    },
-    
-    removeHighlight: (id) => {
-        try {
-            set((state) => ({
-                highlights: state.highlights.filter((h) => h.id !== id),
-            }));
-            localStorage.setItem('highlights', JSON.stringify(get().highlights));
-        } catch (error) {
-            console.error('Error removing highlight:', error);
-        }
-    },
-    
-    clearHighlights: () => {
-        try {
-            set({ highlights: [] });
-            localStorage.removeItem('highlights');
-        } catch (error) {
-            console.error('Error clearing highlights:', error);
-        }
-    },
-}));
+  )
+);

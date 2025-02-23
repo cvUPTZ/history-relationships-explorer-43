@@ -1,96 +1,165 @@
-
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Download, ZoomIn } from 'lucide-react';
-import { Panel } from '@xyflow/react';
+import React, { useState } from 'react';
 import { NodeType } from '../HistoricalNode';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Resizable } from 're-resizable';
+import Draggable from 'react-draggable';
 
-interface LeftPanelProps {
+export interface LeftPanelProps {
   onFitView: () => void;
   onDownloadPDF: () => void;
   onAddNode: (type: NodeType) => void;
+  onAnalyzeText: (text: string) => Promise<void>;
+  onAutoLayout: () => void;
+  distributeNodesEvenly: () => void;
+  additionalButtons?: { label: string; onClick: () => void }[];
 }
 
-export function LeftPanel({ onFitView, onDownloadPDF, onAddNode }: LeftPanelProps) {
+export const LeftPanel: React.FC<LeftPanelProps> = ({
+  onFitView,
+  onDownloadPDF,
+  onAddNode,
+  onAnalyzeText,
+  onAutoLayout,
+  distributeNodesEvenly,
+  additionalButtons,
+}) => {
+  const [text, setText] = useState('');
+  const [width, setWidth] = useState(250);
+  const [height, setHeight] = useState(400);
+  const [position, setPosition] = useState({ x: 10, y: 10 });
+
+  const handleAnalyze = () => {
+    if (text.trim()) {
+      onAnalyzeText(text);
+      setText('');
+    }
+  };
+
+  const handleResize = (e: any, direction: any, ref: any, d: any) => {
+    setWidth((prevWidth) => prevWidth + d.width);
+    setHeight((prevHeight) => prevHeight + d.height);
+  };
+
+  const handleDragStop = (e: any, data: any) => {
+    setPosition({ x: data.x, y: data.y });
+  };
+
   return (
-    <>
-      <Panel position="top-left" className="bg-background/50 backdrop-blur-sm p-2 rounded-lg">
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={onFitView} className="flex items-center gap-2">
-            <ZoomIn size={16} />
-            Fit View
-          </Button>
-          <Button variant="outline" size="sm" onClick={onDownloadPDF} className="flex items-center gap-2">
-            <Download size={16} />
-            حفظ كـ PDF
-          </Button>
+    <Draggable
+      handle=".drag-handle"
+      defaultPosition={{ x: position.x, y: position.y }}
+      onStop={handleDragStop}
+    >
+      <div style={{ position: 'absolute', zIndex: 1000 }}>
+        <div className="drag-handle bg-gray-100 px-3 py-2 text-sm font-medium border-b border-gray-200 cursor-move">
+          Drag Me
         </div>
-      </Panel>
-      <Panel position="top-left" className="bg-background/50 backdrop-blur-sm p-2 rounded-lg">
-        <div className="flex flex-col gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onAddNode('event')}
-            className="bg-blue-50 hover:bg-blue-100"
-          >
-            Add Event
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onAddNode('person')}
-            className="bg-green-50 hover:bg-green-100"
-          >
-            Add Person
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onAddNode('cause')}
-            className="bg-red-50 hover:bg-red-100"
-          >
-            Add Cause
-          </Button>
-          <Card className="p-2">
-            <p className="text-xs font-medium mb-2">PESC Factors</p>
-            <div className="flex flex-col gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onAddNode('political')}
-                className="bg-purple-50 hover:bg-purple-100"
-              >
-                Political
+        <Resizable
+          size={{ width, height }}
+          minWidth={200}
+          minHeight={300}
+          maxWidth={400}
+          maxHeight={600}
+          onResize={handleResize}
+          onResizeStop={handleResize}
+          enable={{
+            top: false,
+            right: true,
+            bottom: true,
+            left: false,
+            topRight: false,
+            bottomRight: true,
+            bottomLeft: false,
+            topLeft: false,
+          }}
+        >
+          <div className="rounded-lg bg-white p-4 shadow-lg" style={{ width: '100%', height: '100%' }}>
+            <div className="mb-4 space-y-2">
+              <Button onClick={onFitView} variant="outline" className="w-full">
+                Fit View
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onAddNode('economic')}
-                className="bg-yellow-50 hover:bg-yellow-100"
-              >
-                Economic
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onAddNode('social')}
-                className="bg-pink-50 hover:bg-pink-100"
-              >
-                Social
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onAddNode('cultural')}
-                className="bg-indigo-50 hover:bg-indigo-100"
-              >
-                Cultural
+              <Button onClick={onDownloadPDF} variant="outline" className="w-full">
+                Download PDF
               </Button>
             </div>
-          </Card>
-        </div>
-      </Panel>
-    </>
+
+            <div className="mb-4 space-y-2">
+              <Button onClick={onAutoLayout} variant="outline" className="w-full">
+                Auto Layout (Dagre)
+              </Button>
+              <Button onClick={distributeNodesEvenly} variant="outline" className="w-full">
+                Distribute Evenly
+              </Button>
+              {additionalButtons &&
+                additionalButtons.map((button, index) => (
+                  <Button key={index} onClick={button.onClick} variant="outline" className="w-full">
+                    {button.label}
+                  </Button>
+                ))}
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="font-medium">Add New Node</h3>
+              <div className="grid grid-cols-2 gap-1">
+                <Button onClick={() => onAddNode('event')} variant="outline" size="sm">
+                  Event 📅
+                </Button>
+                <Button onClick={() => onAddNode('person')} variant="outline" size="sm">
+                  Person 👤
+                </Button>
+                <Button onClick={() => onAddNode('cause')} variant="outline" size="sm">
+                  Cause ⚡
+                </Button>
+                <Button onClick={() => onAddNode('political')} variant="outline" size="sm">
+                  Political 🏛️
+                </Button>
+                <Button onClick={() => onAddNode('economic')} variant="outline" size="sm">
+                  Economic 💰
+                </Button>
+                <Button onClick={() => onAddNode('social')} variant="outline" size="sm">
+                  Social 👥
+                </Button>
+                <Button onClick={() => onAddNode('cultural')} variant="outline" size="sm">
+                  Cultural 🎭
+                </Button>
+                <Button onClick={() => onAddNode('term')} variant="outline" size="sm">
+                  Term 📖
+                </Button>
+                <Button onClick={() => onAddNode('date')} variant="outline" size="sm">
+                  Date ⏰
+                </Button>
+                <Button onClick={() => onAddNode('goal')} variant="outline" size="sm">
+                  Goal 🎯
+                </Button>
+                <Button onClick={() => onAddNode('indicator')} variant="outline" size="sm">
+                  Indicator 📊
+                </Button>
+                <Button onClick={() => onAddNode('country')} variant="outline" size="sm">
+                  Country 🌍
+                </Button>
+                <Button onClick={() => onAddNode('other')} variant="outline" size="sm">
+                  Other ❔
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="font-medium">Analyze Text</h3>
+              <Textarea
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder="Enter text here for analysis..."
+                className="mb-2"
+                dir="rtl"
+              />
+              <Button onClick={handleAnalyze} className="w-full" disabled={!text.trim()}>
+                Analyze
+              </Button>
+            </div>
+          </div>
+        </Resizable>
+      </div>
+    </Draggable>
   );
-}
+};

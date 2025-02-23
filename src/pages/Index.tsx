@@ -1,17 +1,11 @@
-// src/pages/Index.jsx
-import { useState } from 'react';
-import Analysis from '../components/Analysis';
-import Flow from '../components/Flow';
+// src/pages/Index.tsx
+import React from 'react';
+import HomePage from '../components/HomePage'; // Correct import path
 
-export default function HomePage() {
+const Index: React.FC = () => {
   return (
-    <div dir="rtl" className="grid grid-cols-2 gap-4 p-4 h-screen">
-      <div className="overflow-auto">
-        <Analysis />
-      </div>
-      <div className="overflow-auto">
-        <Flow />
-      </div>
-    </div>
+    <HomePage />
   );
-}
+};
+
+export default Index;
