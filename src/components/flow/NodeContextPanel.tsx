@@ -3,10 +3,35 @@ import React from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Sidebar, SidebarContent, SidebarHeader } from '@/components/ui/sidebar';
+import { 
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetClose,
+} from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
+import { X } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import type { HistoricalNodeData } from '../HistoricalNode';
+import { supabase } from "@/integrations/supabase/client";
+
+// Import typeIcons from HistoricalNode
+const typeIcons: Record<string, string> = {
+  event: '📅',
+  person: '👤',
+  cause: '⚡',
+  political: '🏛️',
+  economic: '💰',
+  social: '👥',
+  cultural: '🎭',
+  term: '📖',
+  date: '⏰',
+  goal: '🎯',
+  indicator: '📊',
+  country: '🌍',
+  other: '❔',
+};
 
 interface NodeContextPanelProps {
   selectedNode: {
@@ -16,35 +41,33 @@ interface NodeContextPanelProps {
 }
 
 async function generateNodeContext(nodeData: HistoricalNodeData) {
-  try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/analyze-node`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        label: nodeData.label,
-        type: nodeData.type,
-        description: nodeData.description
-      }),
-    });
+  const { data, error } = await supabase.functions.invoke("analyze-node", {
+    body: {
+      label: nodeData.label,
+      type: nodeData.type,
+      description: nodeData.description,
+    },
+  });
 
-    if (!response.ok) {
-      throw new Error('Failed to analyze node');
-    }
+  console.log("Supabase function response:", { data, error });
 
-    const data = await response.json();
-    return data.context;
-  } catch (error) {
-    console.error('Error generating context:', error);
-    throw error;
+  if (error) {
+    console.error("Error generating context:", error);
+    throw new Error(error.message || "Failed to analyze node");
   }
+
+  if (!data || !data.context) {
+    console.error("Unexpected response structure:", data);
+    throw new Error("Invalid response from analyze-node function");
+  }
+
+  return data.context;
 }
 
 export function NodeContextPanel({ selectedNode }: NodeContextPanelProps) {
   const { data: context, isLoading, error } = useQuery({
     queryKey: ['nodeContext', selectedNode?.id],
-    queryFn: () => selectedNode ? generateNodeContext(selectedNode.data) : null,
+    queryFn: () => (selectedNode ? generateNodeContext(selectedNode.data) : null),
     enabled: !!selectedNode,
   });
 
@@ -52,38 +75,41 @@ export function NodeContextPanel({ selectedNode }: NodeContextPanelProps) {
     return null;
   }
 
+  const nodeIcon = typeIcons[selectedNode.data.type] || typeIcons.other;
+
   return (
-    <Sidebar>
-      <SidebarHeader className="border-b border-gray-200 p-4">
-        <div className="flex items-center justify-between">
+    <Sheet defaultOpen>
+      <SheetContent side="right" className="w-[320px] pr-10">
+        <SheetClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
+          <X className="h-4 w-4" />
+          <span className="sr-only">Close</span>
+        </SheetClose>
+        <SheetHeader className="border-b border-gray-200 pb-4 pr-6">
           <div className="flex items-center gap-2">
-            <span className="text-xl">{selectedNode.data.type === 'person' ? '👤' : '📝'}</span>
-            <h2 className="text-lg font-semibold">{selectedNode.data.label}</h2>
+            <span className="text-xl">
+              {nodeIcon}
+            </span>
+            <SheetTitle>{selectedNode.data.label}</SheetTitle>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => window.dispatchEvent(new CustomEvent('closeNodeContext'))}>
-            ✕
-          </Button>
+        </SheetHeader>
+        <div className="mt-4">
+          <ScrollArea className="h-[calc(100vh-120px)]">
+            {isLoading ? (
+              <div className="space-y-4">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-2/3" />
+              </div>
+            ) : error ? (
+              <div className="text-red-500">
+                Failed to load context. Please try again later.
+              </div>
+            ) : (
+              <div className="prose prose-sm max-w-none">{context}</div>
+            )}
+          </ScrollArea>
         </div>
-      </SidebarHeader>
-      <SidebarContent className="p-4">
-        <ScrollArea className="h-[calc(100vh-120px)]">
-          {isLoading ? (
-            <div className="space-y-4">
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-2/3" />
-            </div>
-          ) : error ? (
-            <div className="text-red-500">
-              Failed to load context. Please try again later.
-            </div>
-          ) : (
-            <div className="prose prose-sm max-w-none">
-              {context}
-            </div>
-          )}
-        </ScrollArea>
-      </SidebarContent>
-    </Sidebar>
+      </SheetContent>
+    </Sheet>
   );
 }
