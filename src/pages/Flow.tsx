@@ -1,18 +1,19 @@
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
-import ReactFlow, {
+import {
+  ReactFlow,
   addEdge,
   useNodesState,
   useEdgesState,
   Controls,
   Background,
   Node,
+  Position,
+  MarkerType
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { Handle } from "reactflow";
-import { Position } from "reactflow";
-import { MarkerType } from "reactflow";
-import { HistoricalNodeData } from "@/lib/types";
+import { NodeData } from "@/lib/types";
 import { LeftPanel } from "@/components/flow/LeftPanel";
 import { RightPanel } from "@/components/flow/RightPanel";
 
@@ -22,7 +23,7 @@ const initialNodes = [
     type: "input",
     data: { label: "Input Node" },
     position: { x: 250, y: 5 },
-    draggable: true, // Explicitly enable dragging
+    draggable: true,
   },
 ];
 
@@ -33,7 +34,7 @@ const nodeTypes = {};
 const Input = () => {
   return (
     <div>
-      <Handle type="source" position={Position.right} id="a" />
+      <Handle type="source" position={Position.Right} id="a" />
       <div>Input</div>
     </div>
   );
@@ -43,7 +44,7 @@ const Output = () => {
   return (
     <div>
       Output
-      <Handle type="target" position={Position.left} id="a" />
+      <Handle type="target" position={Position.Left} id="a" />
     </div>
   );
 };
@@ -52,8 +53,8 @@ const CustomNodeComponent = ({ data }: any) => {
   return (
     <div>
       <div>{data.label}</div>
-      <Handle type="source" position={Position.right} id="a" />
-      <Handle type="target" position={Position.left} id="b" />
+      <Handle type="source" position={Position.Right} id="a" />
+      <Handle type="target" position={Position.Left} id="b" />
     </div>
   );
 };
@@ -88,7 +89,7 @@ const Flow = () => {
           {
             ...params,
             type: "smoothstep",
-            markerEnd: { type: MarkerType.arrowclosed, color: "black" },
+            markerEnd: { type: MarkerType.ArrowClosed, color: "black" },
           },
           eds,
         ),
@@ -129,7 +130,7 @@ const Flow = () => {
         type,
         position,
         data: { label: `${type} node` },
-        draggable: true, // Make sure new nodes are draggable
+        draggable: true,
       };
 
       setNodes((nds) => nds.concat(newNode));
@@ -153,14 +154,14 @@ const Flow = () => {
           onInit={setReactFlowInstance}
           nodeTypes={nodeTypes}
           fitView
-          draggable={true} // Enable dragging globally
-          nodesDraggable={true} // Enable node dragging
+          draggable={true}
+          nodesDraggable={true}
           attributionPosition="top-right"
           onDrop={onDrop}
           onDragOver={onDragOver}
         >
           <Controls />
-          <Background color="#aaa" variant="dots" />
+          <Background variant="dots" gap={12} size={1} />
         </ReactFlow>
       </div>
 
