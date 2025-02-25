@@ -1,5 +1,4 @@
-
-import React, { createContext, useCallback, useRef, useEffect,useContext ,useState, useMemo } from "react";
+import React, { createContext, useCallback, useRef, useEffect, useContext, useState, useMemo } from "react";
 
 import { v4 as uuidv4 } from "uuid";
 import { createClient } from "@supabase/supabase-js";
@@ -37,7 +36,7 @@ interface GraphContextProps {
   setDefaultEdgeType: (type: string) => void;
   analyzeText: (text: string) => Promise<Entity[]>;
   convertEntitiesToNodes: (entities: Entity[]) => void;
-  onNodesChangeHandler: (changes: NodeChange[]) => void; // Add this
+  onNodesChangeHandler: (changes: NodeChange[]) => void;
 }
 
 const GraphContext = createContext<GraphContextProps | undefined>(undefined);
@@ -50,7 +49,7 @@ const supabaseAnonKey =
   import.meta.env.VITE_SUPABASE_ANON_KEY ||
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpbW1qenVxZHF4ZnFvaWtjZXhmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAwNDA1NTcsImV4cCI6MjA1NTYxNjU1N30.gSdv5Q0seyNiWhjEwXCzKzxYN1TUTFGxOpKUZtF06J0";
 
-export function GraphProvider({ children }: { children: ReactNode }) {
+export function GraphProvider({ children }: { children: React.ReactNode }) {
   const [nodes, setNodes] = useState<Node<NodeData>[]>([]);
   const [edges, setEdges] = useState<Edge<EdgeData>[]>([]);
   const [entities, setEntities] = useState<Entity[]>([]);
@@ -378,7 +377,7 @@ export function GraphProvider({ children }: { children: ReactNode }) {
         setDefaultEdgeType,
         analyzeText,
         convertEntitiesToNodes,
-        onNodesChangeHandler // Add this
+        onNodesChangeHandler
       }}
     >
       {children}

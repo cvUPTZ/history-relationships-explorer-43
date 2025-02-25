@@ -1,3 +1,4 @@
+
 import React, { useCallback, useRef, useEffect, useState } from "react";
 import {
   ReactFlow,
@@ -69,6 +70,7 @@ const GraphDisplay = () => {
     setContainerDimensions,
     containerDimensions,
     defaultEdgeType,
+    onNodesChangeHandler,
   } = useGraph();
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -111,6 +113,7 @@ const GraphDisplay = () => {
     type: "custom",
     position: node.position || { x: 0, y: 0 },
     data: node.data,
+    draggable: true, // Explicitly enable dragging
   }));
 
   const flowEdges = edges.map((edge) => ({
@@ -170,7 +173,10 @@ const GraphDisplay = () => {
         onNodeClick={handleNodeClick}
         onEdgeClick={handleEdgeClick}
         onConnect={onConnect}
+        onNodesChange={onNodesChangeHandler}
         nodeTypes={nodeTypes}
+        nodesDraggable={true}
+        connectOnClick={false}
         connectionMode={ConnectionMode.Loose}
         onInit={onInit}
         fitView
