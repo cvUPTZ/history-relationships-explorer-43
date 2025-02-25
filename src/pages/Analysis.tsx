@@ -6,7 +6,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-
 import { Card } from "@/components/ui/card";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { useHighlightStore } from "../utils/highlightStore";
