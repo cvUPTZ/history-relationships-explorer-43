@@ -1,27 +1,24 @@
-
+// src/App.tsx
 import React from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/components/ui/toaster"; // Make sure this path is correct
+import { TooltipProvider } from "@/components/ui/tooltip"; // And this one
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Home from "./pages/Home";
-import NotFound from "./pages/NotFound";
-
-const queryClient = new QueryClient();
+import Index from "./pages/Index"; // Correct path
+import NotFound from "./pages/NotFound"; // Correct path
 
 const App = () => {
   return (
-    <QueryClientProvider client={queryClient}>
+    <React.StrictMode>
       <TooltipProvider>
         <BrowserRouter>
           <Toaster />
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<Index />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
-    </QueryClientProvider>
+    </React.StrictMode>
   );
 };
 

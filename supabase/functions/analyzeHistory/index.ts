@@ -14,7 +14,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { text, temperature = 0.7 } = await req.json()
+    const { text } = await req.json()
     const apiKey = Deno.env.get('GEMINI_API_KEY')
     
     if (!apiKey) {
@@ -25,15 +25,14 @@ Deno.serve(async (req) => {
     const genAI = new GoogleGenerativeAI(apiKey)
     const model = genAI.getGenerativeModel({ model: 'gemini-pro' })
 
-    const prompt = `Analyze this historical text and identify relationships between entities. Return ONLY a JSON object with this exact format:
+    // Create a structured prompt for historical analysis
+    const prompt = `Analyze this historical text and extract the following information. Return ONLY the JSON object without any markdown formatting or explanation:
     {
-      "relationships": [
-        {
-          "source": "entity name",
-          "target": "other entity name",
-          "type": "type of relationship"
-        }
-      ]
+      "events": [{"date": "YYYY", "description": "event description"}],
+      "people": ["person name"],
+      "locations": ["location name"],
+      "terms": ["key term"],
+      "relationships": [{"from": "entity1", "to": "entity2", "type": "relationship type"}]
     }
     
     Text to analyze: ${text}`
@@ -42,19 +41,18 @@ Deno.serve(async (req) => {
     const response = await result.response
     const analysisText = response.text()
     
-    // Clean and parse the JSON response
-    let cleanJson = analysisText.replace(/```json\n?/g, '').replace(/```\n?/g, '')
+    // Extract JSON from the response
+    let cleanJson = analysisText
+    // Remove any markdown code block formatting if present
+    cleanJson = cleanJson.replace(/```json\n?/g, '').replace(/```\n?/g, '')
     
+    // Try to parse the cleaned JSON
     try {
       const parsedAnalysis = JSON.parse(cleanJson)
       console.log('Successfully parsed analysis:', parsedAnalysis)
       
-      if (!Array.isArray(parsedAnalysis.relationships)) {
-        throw new Error('Invalid response format: relationships must be an array')
-      }
-
       return new Response(
-        JSON.stringify(parsedAnalysis),
+        JSON.stringify({ analysis: JSON.stringify(parsedAnalysis) }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 200 
