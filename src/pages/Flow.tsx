@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import ReactFlow, {
   addEdge,
@@ -21,8 +22,10 @@ const initialNodes = [
     type: "input",
     data: { label: "Input Node" },
     position: { x: 250, y: 5 },
+    draggable: true, // Explicitly enable dragging
   },
 ];
+
 const initialEdges = [];
 
 const nodeTypes = {};
@@ -113,7 +116,6 @@ const Flow = () => {
       const reactFlowBounds = nodeRef.current!.getBoundingClientRect();
       const type = event.dataTransfer.getData("application/reactflow");
 
-      // check if the dropped element is valid
       if (typeof type === "undefined" || !type) {
         return;
       }
@@ -127,6 +129,7 @@ const Flow = () => {
         type,
         position,
         data: { label: `${type} node` },
+        draggable: true, // Make sure new nodes are draggable
       };
 
       setNodes((nds) => nds.concat(newNode));
@@ -150,6 +153,8 @@ const Flow = () => {
           onInit={setReactFlowInstance}
           nodeTypes={nodeTypes}
           fitView
+          draggable={true} // Enable dragging globally
+          nodesDraggable={true} // Enable node dragging
           attributionPosition="top-right"
           onDrop={onDrop}
           onDragOver={onDragOver}
