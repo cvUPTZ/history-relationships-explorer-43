@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "lib": ["dom", "es2020"],
+    "allowJs": true,
+    "strict": false,
+    "jsx": "react-jsx",
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "types": ["@types/react", "@types/react-dom"]
+  },
+  "include": ["./**/*.ts", "./**/*.tsx"],
+  "exclude": ["node_modules"]
+}
