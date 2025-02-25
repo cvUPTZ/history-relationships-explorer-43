@@ -1,16 +1,8 @@
 
-import { Edge, Node } from '@xyflow/react';
+import { Node, Edge } from "@xyflow/react";
 
-export type NodeType = "person" | "place" | "event" | "concept" | "cause" | "political" | "economic" | "social" | "cultural" | "term" | "date" | "goal" | "indicator" | "country" | "other";
-
-export const EdgeTypes = {
-  CAUSES: 'causes',
-  INFLUENCES: 'influences',
-  PARTICIPATES: 'participates',
-  LOCATED: 'located',
-} as const;
-
-export type EdgeType = typeof EdgeTypes[keyof typeof EdgeTypes];
+export type NodeType = "default" | "input" | "output" | "custom";
+export type EdgeType = "default" | "smooth" | "step" | "smoothstep";
 
 export interface Position {
   x: number;
@@ -20,37 +12,24 @@ export interface Position {
 export interface NodeData {
   label: string;
   type: NodeType;
-  description?: string;
   position: Position;
+  description?: string;
   context?: string;
-  imageUrl?: string;
-  subtitle?: string;
+  [key: string]: unknown; // Add index signature for additional properties
 }
 
 export interface EdgeData {
-  id: string;
-  source: string;
-  target: string;
-  label: string;
-  type: EdgeType;
+  label?: string;
+  type?: EdgeType;
   description?: string;
+  [key: string]: unknown; // Add index signature for additional properties
 }
 
 export interface Entity {
   id: string;
-  type: NodeType;
   text: string;
-  startIndex: number;
-  endIndex: number;
+  type: string;
   context?: string;
 }
 
-export interface Relationship {
-  source: string;
-  target: string;
-  type: EdgeType;
-  description?: string;
-}
-
-export type CustomNode = Node<NodeData>;
-export type CustomEdge = Edge<EdgeData>;
+export type { Node, Edge };
